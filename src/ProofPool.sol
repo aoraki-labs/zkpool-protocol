@@ -7,6 +7,9 @@
 
 pragma solidity ^0.8.20;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Counters} from "lib/openzeppelin-contracts/contracts/utils/Counters.sol";
+
 
 // submit task
 // submit proof
@@ -20,30 +23,34 @@ struct TaskAssignment {
     bytes signature;
 }
 
+struct TaskStatus {
+    bytes instance;
+    bool proven;
+}
+
 
 contract ProofPool {
+
+    using Counters for Counters.Counter;
+
 
     address bondToken;
     uint256 bondAmount;
     address verifierAddress;
 
-    event BlockProposed(
-        blockId: state.slotB.numBlocks++,
-        prover: blk.prover,
-        reward: reward,
-        meta: meta
-    );
+    Counters.Counter public taskIdCounter;
+    mapping(uint256 => TaskStatus) public taskStatus;
 
-    event BondDeposited(
+    event TaskSubmitted();
 
-    );
+    event BondDeposited();
 
     error INVALID_ASSIGNMENT();
     error INVALID_PROVER_SIG();
 
     function init(
         address calldata _bondToken,
-        uint256 calldata _bondAmount
+        uint256 calldata _bondAmount,
         address calldata _verifierAddress
         
     )
@@ -59,19 +66,13 @@ contract ProofPool {
 
 
     function submitTask(
-        bytes calldata input,
-        bytes calldata txList,
+        bytes calldata instance,
+        // bytes calldata txList,
         TaskAssignment memory assignment
     )
         external
+        returns (uint256 taskId)
     {
-
-        // check task assignment expiry
-        // check task assignment correctness
-        // pay the reward
-        // record this task with uniq id
-        // emit event
-        // return the uniq id
 
         // Check prover assignment
         if (
@@ -81,10 +82,18 @@ contract ProofPool {
         }
 
         // pay the reward
-        // TODO
+        IERC20(assignment.feeToken).transferFrom(
+            msg.sender,
+            assignment.prover,
+            assignment.amount
+        );
 
         // deposited bond
-        // TODO
+        IERC20(bondAddress).transferFrom(
+            assignment.prover,
+            this,
+            bondAmount
+        );
 
         if (!assignment.prover.isContract()) {
             address assignedProver = assignment.prover;
@@ -111,8 +120,12 @@ contract ProofPool {
             revert INVALID_PROVER();
         }
 
-
-
+        taskId = taskIdCounter.current();
+        taskStatus[taskId] = TaskStatus({
+            instance: instance,
+            status: false
+        });
+        taskIdCounter.increment();
 
 
     }
