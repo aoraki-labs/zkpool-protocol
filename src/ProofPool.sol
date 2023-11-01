@@ -6,9 +6,11 @@
 // /_/   \_\___/|_| \_/_/   \_|_|\_|___|  |_____/_/   \_|____|____/ 
 
 pragma solidity ^0.8.20;
+
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { LibBytesUtils } from "./libs/LibBytesUtils.sol";
 
 
@@ -29,7 +31,7 @@ struct TaskStatus {
 
 contract ProofPool {
     using Address for address;
-
+    using ECDSA for bytes32;
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
 
@@ -143,7 +145,7 @@ contract ProofPool {
         );
 
         // Check the signature
-        if (!assignment.prover.isContract()) {
+        if (!_isContract(assignment.prover)) {
             address assignedProver = assignment.prover;
 
             if (
@@ -271,5 +273,18 @@ contract ProofPool {
             )
         );
     }
+
+    function _isContract(address _addr) 
+        private
+        returns (bool isContract)
+    {
+        uint32 size;
+        assembly {
+            size := extcodesize(_addr)
+        }
+
+        return (size > 0);
+    }
+
 
 }
