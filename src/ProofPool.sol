@@ -10,7 +10,12 @@ pragma solidity ^0.8.20;
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import { IERC165 } 
+    from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } 
+    from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { LibBytesUtils } from "./libs/LibBytesUtils.sol";
 
 
@@ -29,8 +34,8 @@ struct TaskStatus {
     bool proven;
 }
 
-contract ProofPool {
-    using Address for address;
+contract ProofPool is Ownable, ReentrancyGuard {
+
     using ECDSA for bytes32;
 
     bytes4 internal constant EIP1271_MAGICVALUE = 0x1626ba7e;
@@ -81,9 +86,25 @@ contract ProofPool {
     error TASK_NOT_OPEN();
     error TASK_ALREADY_OPEN();
 
-    // or config
-    // should be only owner
-    function init(
+    constructor(
+        address _owner,
+        address  _bondToken,
+        uint256  _bondAmount,
+        address  _verifierAddress,
+        uint32  _proofWindow,
+        uint8  _instanceLength
+    )
+        Ownable(_owner) 
+    {
+        bondToken = _bondToken;
+        bondAmount = _bondAmount;
+        verifierAddress = _verifierAddress;
+        proofWindow = _proofWindow;
+        instanceLength = _instanceLength;
+    }
+
+
+    function updateConfig(
         address  _bondToken,
         uint256  _bondAmount,
         address  _verifierAddress,
@@ -91,11 +112,8 @@ contract ProofPool {
         uint8  _instanceLength
     )
         external
+        onlyOwner
     {   
-        // only owner
-        // init bond type and amout for this task
-        // init verifier address
-        // init proof window
         bondToken = _bondToken;
         bondAmount = _bondAmount;
         verifierAddress = _verifierAddress;
@@ -110,6 +128,7 @@ contract ProofPool {
         TaskAssignment memory assignment
     )
         external
+        nonReentrant
         returns (bytes32 taskKey)
     {
 
@@ -149,14 +168,18 @@ contract ProofPool {
             address assignedProver = assignment.prover;
 
             if (
-                _hashAssignment(instance, assignment).recover(assignment.signature)
-                    != assignedProver
+                _hashAssignment(
+                    instance,
+                    assignment
+                ).recover(assignment.signature) != assignedProver
             ) {
                 revert INVALID_PROVER_SIG();
             }
 
         } else if (
-            assignment.prover.supportsInterface(type(IERC1271).interfaceId)
+            IERC165(
+                assignment.prover
+            ).supportsInterface(type(IERC1271).interfaceId)
         ) {
             if (
                 IERC1271(assignment.prover).isValidSignature(
@@ -174,7 +197,7 @@ contract ProofPool {
         taskStatusMap[taskKey] = TaskStatus({
             instance: instance,
             prover: assignment.prover,
-            submittedAt: block.timestamp,
+            submittedAt: uint64(block.timestamp),
             proven: false
         });
 
@@ -189,10 +212,11 @@ contract ProofPool {
     }
 
     function proveTask(
-        bytes calldata taskKey,
+        bytes32 taskKey,
         bytes calldata proof
     )
         external
+        nonReentrant
     {  
         TaskStatus storage taskStatus = taskStatusMap[taskKey];
         if (taskStatus.prover == address(0) && taskStatus.submittedAt == 0) {
@@ -208,15 +232,19 @@ contract ProofPool {
             revert TASK_NOT_THE_SAME();
         }
 
-
-
-        if (taskStatus.submittedAt + proofWindow <= block.time && taskStatus.prover != msg.sender) {
+        if (
+            taskStatus.submittedAt + proofWindow <= block.timestamp 
+                && taskStatus.prover != msg.sender
+        ) {
             revert TASK_NOT_OPEN();
-        } else if (taskStatus.submittedAt + proofWindow > block.time && taskStatus.prover == msg.sender) {
+        } else if (
+            taskStatus.submittedAt + proofWindow > block.timestamp
+                && taskStatus.prover == msg.sender
+        ) {
             revert TASK_ALREADY_OPEN();
         }
 
-        (bool _isCallSuccess, bytes memory _response) = verifierAddress.staticcall(proof);
+        (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
         if (!_isCallSuccess) {
             revert INVALID_PROOF();
         }
@@ -244,7 +272,7 @@ contract ProofPool {
     }
 
     function readProofStatus(
-        bytes calldata taskKey
+        bytes32 taskKey
     )
         external
         view
@@ -256,26 +284,9 @@ contract ProofPool {
         }
     }
 
-    function _hashAssignment(
-        bytes memory _instance,
-        TaskAssignment memory _assignment
-    )
-        private
-        view
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encode(
-                _instance,
-                _assignment.feeToken,
-                _assignment.amout,
-                _assignment.expiry
-            )
-        );
-    }
-
     function _isContract(address _addr) 
         private
+        view
         returns (bool isContract)
     {
         uint32 size;
@@ -286,5 +297,22 @@ contract ProofPool {
         return (size > 0);
     }
 
+    function _hashAssignment(
+        bytes memory _instance,
+        TaskAssignment memory _assignment
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encode(
+                _instance,
+                _assignment.feeToken,
+                _assignment.amount,
+                _assignment.expiry
+            )
+        );
+    }
 
 }
