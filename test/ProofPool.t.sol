@@ -64,7 +64,6 @@ contract ProofPoolTest is Test {
 
     }
 
-
     function test_updateConfig() public {
 
         vm.startPrank(owner);
@@ -77,7 +76,6 @@ contract ProofPoolTest is Test {
         );
 
     }
-
 
     function test_submitTask() public {
 
