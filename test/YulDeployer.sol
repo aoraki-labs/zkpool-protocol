@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
 contract YulDeployer is Test {
     ///@notice Compiles a Yul contract and returns the address that the contract was deployed to
@@ -9,7 +9,7 @@ contract YulDeployer is Test {
     ///@param fileName - The file name of the Yul contract. For example, the file name for "Example.yul" is "Example"
     ///@return deployedAddress - The address that the contract was deployed to
     function deployContract(string memory fileName) public returns (address) {
-        string memory bashCommand = string.concat('cast abi-encode "f(bytes)" $(solc --yul yul/', string.concat(fileName, ".yul --bin | tail -1)"));
+        string memory bashCommand = string.concat('cast abi-encode "f(bytes)" $(~/.svm/0.8.15/solc-0.8.15 --yul yul/test/', string.concat(fileName, ".yul --bin | tail -1)"));
 
         string[] memory inputs = new string[](3);
         inputs[0] = "bash";
