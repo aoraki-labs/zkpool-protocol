@@ -21,8 +21,11 @@ import { LibBytesUtils } from "./libs/LibBytesUtils.sol";
 
 struct TaskAssignment {
     address prover;
-    address feeToken;
-    uint256 amount;
+    address rewardToken;
+    uint256 rewardAmount;
+    uint64 liabilityWindow;
+    address liabilityToken;
+    uint256 liabilityAmount;
     uint64 expiry;
     bytes signature;
 }
@@ -54,8 +57,11 @@ contract ProofPool is Ownable, ReentrancyGuard {
         address indexed requester,
         address indexed prover,
         bytes32 taskKey,
-        address token,
-        uint256 amount
+        address rewardToken,
+        uint256 rewardAmount,
+        uint64 liabilityWindow,
+        address liabilityToken,
+        uint256 liabilityAmount
     );
 
     event TaskProven(
@@ -144,10 +150,10 @@ contract ProofPool is Ownable, ReentrancyGuard {
         }
 
         // Pay the reward
-        IERC20(assignment.feeToken).transferFrom(
+        IERC20(assignment.rewardToken).transferFrom(
             msg.sender,
             assignment.prover,
-            assignment.amount
+            assignment.rewardAmount
         );
 
         // Deposit the bond
@@ -205,8 +211,11 @@ contract ProofPool is Ownable, ReentrancyGuard {
             msg.sender,
             assignment.prover,
             taskKey,
-            assignment.feeToken,
-            assignment.amount
+            assignment.rewardToken,
+            assignment.rewardAmount,
+            assignment.liabilityWindow,
+            assignment.liabilityToken,
+            assignment.liabilityAmount
         );
     
     }
@@ -308,8 +317,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
         return keccak256(
             abi.encode(
                 _instance,
-                _assignment.feeToken,
-                _assignment.amount,
+                _assignment.rewardToken,
+                _assignment.rewardAmount,
                 _assignment.expiry
             )
         );
