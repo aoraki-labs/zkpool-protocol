@@ -81,6 +81,12 @@ contract ProofPool is Ownable, ReentrancyGuard {
         uint256 amount
     );
 
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 value
+    );
+
     error INVALID_ASSIGNMENT();
     error INVALID_PROVER();
     error INVALID_PROVER_SIG();
@@ -138,26 +144,38 @@ contract ProofPool is Ownable, ReentrancyGuard {
         returns (bytes32 taskKey)
     {
 
-        // Check prover assignment
-        if (assignment.expiry <= block.timestamp) {
-            revert INVALID_ASSIGNMENT();
-        }
+        // // Check prover assignment
+        // if (assignment.expiry <= block.timestamp) {
+        //     revert INVALID_ASSIGNMENT();
+        // }
 
-        // Check task already submitted
-        taskKey = keccak256(instance);
-        if (taskStatusMap[taskKey].prover != address(0)) {
-            revert TASK_ALREADY_SUBMITTED();
-        }
+        // // Check task already submitted
+        // taskKey = keccak256(instance);
+        // if (taskStatusMap[taskKey].prover != address(0)) {
+        //     revert TASK_ALREADY_SUBMITTED();
+        // }
 
-        // Pay the reward
-        IERC20(assignment.rewardToken).transferFrom(
+        // // Pay the reward
+        // IERC20(assignment.rewardToken).transferFrom(
+        //     msg.sender,
+        //     assignment.prover,
+        //     assignment.rewardAmount
+        // );
+
+        emit Transfer(
             msg.sender,
             assignment.prover,
             assignment.rewardAmount
         );
 
-        // Deposit the bond
-        IERC20(bondToken).transferFrom(
+        // // Deposit the bond
+        // IERC20(bondToken).transferFrom(
+        //     assignment.prover,
+        //     address(this),
+        //     bondAmount
+        // );
+
+        emit Transfer(
             assignment.prover,
             address(this),
             bondAmount
@@ -169,35 +187,35 @@ contract ProofPool is Ownable, ReentrancyGuard {
             bondAmount
         );
 
-        // Check the signature
-        if (!_isContract(assignment.prover)) {
-            address assignedProver = assignment.prover;
+        // // Check the signature
+        // if (!_isContract(assignment.prover)) {
+        //     address assignedProver = assignment.prover;
 
-            if (
-                _hashAssignment(
-                    instance,
-                    assignment
-                ).recover(assignment.signature) != assignedProver
-            ) {
-                revert INVALID_PROVER_SIG();
-            }
+        //     if (
+        //         _hashAssignment(
+        //             instance,
+        //             assignment
+        //         ).recover(assignment.signature) != assignedProver
+        //     ) {
+        //         revert INVALID_PROVER_SIG();
+        //     }
 
-        } else if (
-            IERC165(
-                assignment.prover
-            ).supportsInterface(type(IERC1271).interfaceId)
-        ) {
-            if (
-                IERC1271(assignment.prover).isValidSignature(
-                    _hashAssignment(instance, assignment), assignment.signature
-                ) != EIP1271_MAGICVALUE
-            ) {
-                revert INVALID_PROVER_SIG();
-            }
+        // } else if (
+        //     IERC165(
+        //         assignment.prover
+        //     ).supportsInterface(type(IERC1271).interfaceId)
+        // ) {
+        //     if (
+        //         IERC1271(assignment.prover).isValidSignature(
+        //             _hashAssignment(instance, assignment), assignment.signature
+        //         ) != EIP1271_MAGICVALUE
+        //     ) {
+        //         revert INVALID_PROVER_SIG();
+        //     }
 
-        } else {
-            revert INVALID_PROVER();
-        }
+        // } else {
+        //     revert INVALID_PROVER();
+        // }
 
         // Save the task status
         taskStatusMap[taskKey] = TaskStatus({
@@ -228,41 +246,47 @@ contract ProofPool is Ownable, ReentrancyGuard {
         nonReentrant
     {  
         TaskStatus storage taskStatus = taskStatusMap[taskKey];
-        if (taskStatus.prover == address(0) && taskStatus.submittedAt == 0) {
-            revert TASK_NONE_EXIST();
-        }
+        // if (taskStatus.prover == address(0) && taskStatus.submittedAt == 0) {
+        //     revert TASK_NONE_EXIST();
+        // }
 
-        if (
-            !LibBytesUtils.equal(
-                taskStatus.instance,
-                LibBytesUtils.slice(proof, 0, instanceLength)
-            )
-        ) {
-            revert TASK_NOT_THE_SAME();
-        }
+        // if (
+        //     !LibBytesUtils.equal(
+        //         taskStatus.instance,
+        //         LibBytesUtils.slice(proof, 0, instanceLength)
+        //     )
+        // ) {
+        //     revert TASK_NOT_THE_SAME();
+        // }
 
-        if (
-            taskStatus.submittedAt + proofWindow <= block.timestamp 
-                && taskStatus.prover != msg.sender
-        ) {
-            revert TASK_NOT_OPEN();
-        } else if (
-            taskStatus.submittedAt + proofWindow > block.timestamp
-                && taskStatus.prover == msg.sender
-        ) {
-            revert TASK_ALREADY_OPEN();
-        }
+        // if (
+        //     taskStatus.submittedAt + proofWindow <= block.timestamp 
+        //         && taskStatus.prover != msg.sender
+        // ) {
+        //     revert TASK_NOT_OPEN();
+        // } else if (
+        //     taskStatus.submittedAt + proofWindow > block.timestamp
+        //         && taskStatus.prover == msg.sender
+        // ) {
+        //     revert TASK_ALREADY_OPEN();
+        // }
 
-        (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
-        if (!_isCallSuccess) {
-            revert INVALID_PROOF();
-        }
+        // (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
+        // if (!_isCallSuccess) {
+        //     revert INVALID_PROOF();
+        // }
 
-        // Update status
-        taskStatus.proven = true;
+        // // Update status
+        // taskStatus.proven = true;
 
-        // Release the bond
-        IERC20(bondToken).transfer(
+        // // Release the bond
+        // IERC20(bondToken).transfer(
+        //     msg.sender,
+        //     bondAmount
+        // );
+
+        emit Transfer(
+            address(this),
             msg.sender,
             bondAmount
         );
