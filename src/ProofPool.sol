@@ -56,6 +56,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
     event TaskSubmitted(
         address indexed requester,
         address indexed prover,
+        bytes instance,
         bytes32 taskKey,
         address rewardToken,
         uint256 rewardAmount,
@@ -133,11 +134,18 @@ contract ProofPool is Ownable, ReentrancyGuard {
         instanceLength = _instanceLength;
     }
 
-
     function submitTask(
         bytes calldata instance,
         // bytes calldata txList,
-        TaskAssignment memory assignment
+        // TaskAssignment memory assignment
+        address prover,
+        address rewardToken,
+        uint256 rewardAmount,
+        uint64 liabilityWindow,
+        address liabilityToken,
+        uint256 liabilityAmount,
+        uint64 expiry,
+        bytes calldata signature
     )
         external
         nonReentrant
@@ -150,7 +158,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
         // }
 
         // // Check task already submitted
-        // taskKey = keccak256(instance);
+        taskKey = keccak256(instance);
         // if (taskStatusMap[taskKey].prover != address(0)) {
         //     revert TASK_ALREADY_SUBMITTED();
         // }
@@ -164,8 +172,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
 
         emit Transfer(
             msg.sender,
-            assignment.prover,
-            assignment.rewardAmount
+            prover,
+            rewardAmount
         );
 
         // // Deposit the bond
@@ -176,13 +184,13 @@ contract ProofPool is Ownable, ReentrancyGuard {
         // );
 
         emit Transfer(
-            assignment.prover,
+            prover,
             address(this),
             bondAmount
         );
 
         emit BondDeposited(
-            assignment.prover,
+            prover,
             taskKey,
             bondAmount
         );
@@ -220,20 +228,21 @@ contract ProofPool is Ownable, ReentrancyGuard {
         // Save the task status
         taskStatusMap[taskKey] = TaskStatus({
             instance: instance,
-            prover: assignment.prover,
+            prover: prover,
             submittedAt: uint64(block.timestamp),
             proven: false
         });
 
         emit TaskSubmitted(
             msg.sender,
-            assignment.prover,
+            prover,
+            instance,
             taskKey,
-            assignment.rewardToken,
-            assignment.rewardAmount,
-            assignment.liabilityWindow,
-            assignment.liabilityToken,
-            assignment.liabilityAmount
+            rewardToken,
+            rewardAmount,
+            liabilityWindow,
+            liabilityToken,
+            liabilityAmount
         );
     
     }

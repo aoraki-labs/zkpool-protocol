@@ -116,7 +116,17 @@ contract ProofPoolTest is Test {
             expiry: uint64(block.timestamp + 3600),
             signature: signature
         });
-        bytes32 taskKey = proofPool.submitTask(instance, assignment);
+        bytes32 taskKey = proofPool.submitTask(
+            instance,
+            prover,
+            address(rewardToken),
+            5 ether,
+            3600,
+            address(rewardToken),
+            5 ether,
+            uint64(block.timestamp + 3600),
+            signature
+        );
         TaskStatus memory taskStatus = proofPool.readProofStatus(taskKey);
         vm.stopPrank();
         
@@ -170,7 +180,17 @@ contract ProofPoolTest is Test {
             expiry: uint64(block.timestamp + 3600),
             signature: signature
         });
-        bytes32 taskKey = proofPool.submitTask(instance, assignment);
+        bytes32 taskKey = proofPool.submitTask(
+            instance, 
+            prover,
+            address(rewardToken),
+            5 ether,
+            3600,
+            address(rewardToken),
+            5 ether,
+            uint64(block.timestamp + 3600),
+            signature
+        );
         vm.stopPrank();
         
 
