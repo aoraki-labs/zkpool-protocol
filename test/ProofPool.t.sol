@@ -53,14 +53,14 @@ contract ProofPoolTest is Test {
         rewardToken.transfer(requester, 50 ether);
         bondToken.transfer(prover, 50 ether);
 
-        someVerifer = SomeVerifier(yulDeployer.deployContract("SomeVerifier"));
-        console2.log("someVerifer's address:", address(someVerifer));
+        // someVerifer = SomeVerifier(yulDeployer.deployContract("SomeVerifier"));
+        // console2.log("someVerifer's address:", address(someVerifer));
 
         proofPool = new ProofPool(
             owner,
             address(bondToken),
             10 ether,
-            address(someVerifer),
+            address(0), // mock verifier
             3600,
             32
         );
