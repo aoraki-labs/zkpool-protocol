@@ -6,6 +6,7 @@ import { ProofPool, TaskAssignment, TaskStatus } from "../src/ProofPool.sol";
 import { RewardERC20, BondERC20 } from "./SomeERC20.sol";
 import { YulDeployer } from "./YulDeployer.sol";
 import { LibBytesUtils } from "../src/libs/LibBytesUtils.sol";
+import { Token } from "../src/Token.sol";
 
 interface SomeVerifier {}
 
@@ -37,6 +38,8 @@ contract ProofPoolTest is Test {
     YulDeployer yulDeployer = new YulDeployer();
     SomeVerifier someVerifer;
 
+    Token arkToken;
+
     
     function setUp() public {
         
@@ -61,6 +64,23 @@ contract ProofPoolTest is Test {
             3600,
             32
         );
+
+        arkToken = new Token();
+
+    }
+
+    function test_arkToken() public {
+
+        arkToken.mint(owner, 10 ether);
+        arkToken.mint(requester, 10 ether);
+
+        console2.log("The balance of owner:", arkToken.balance(owner));
+        console2.log("The balance of requester:", arkToken.balance(requester));
+
+        vm.startPrank(owner);
+        arkToken.transfer(requester, 1 ether);
+        console2.log("The balance of owner:", arkToken.balance(owner));
+        console2.log("The balance of requester:", arkToken.balance(requester));
 
     }
 
