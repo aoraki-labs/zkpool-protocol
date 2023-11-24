@@ -21,8 +21,11 @@ import { LibBytesUtils } from "./libs/LibBytesUtils.sol";
 
 struct TaskAssignment {
     address prover;
-    address feeToken;
-    uint256 amount;
+    address rewardToken;
+    uint256 rewardAmount;
+    uint64 liabilityWindow;
+    address liabilityToken;
+    uint256 liabilityAmount;
     uint64 expiry;
     bytes signature;
 }
@@ -53,9 +56,13 @@ contract ProofPool is Ownable, ReentrancyGuard {
     event TaskSubmitted(
         address indexed requester,
         address indexed prover,
+        bytes instance,
         bytes32 taskKey,
-        address token,
-        uint256 amount
+        address rewardToken,
+        uint256 rewardAmount,
+        uint64 liabilityWindow,
+        address liabilityToken,
+        uint256 liabilityAmount
     );
 
     event TaskProven(
@@ -73,6 +80,12 @@ contract ProofPool is Ownable, ReentrancyGuard {
         address indexed to,
         bytes32 taskKey,
         uint256 amount
+    );
+
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 value
     );
 
     error INVALID_ASSIGNMENT();
@@ -121,92 +134,115 @@ contract ProofPool is Ownable, ReentrancyGuard {
         instanceLength = _instanceLength;
     }
 
-
     function submitTask(
         bytes calldata instance,
         // bytes calldata txList,
-        TaskAssignment memory assignment
+        // TaskAssignment memory assignment
+        address prover,
+        address rewardToken,
+        uint256 rewardAmount,
+        uint64 liabilityWindow,
+        address liabilityToken,
+        uint256 liabilityAmount,
+        uint64 expiry,
+        bytes calldata signature
     )
         external
         nonReentrant
         returns (bytes32 taskKey)
     {
 
-        // Check prover assignment
-        if (assignment.expiry <= block.timestamp) {
-            revert INVALID_ASSIGNMENT();
-        }
+        // // Check prover assignment
+        // if (assignment.expiry <= block.timestamp) {
+        //     revert INVALID_ASSIGNMENT();
+        // }
 
-        // Check task already submitted
+        // // Check task already submitted
         taskKey = keccak256(instance);
-        if (taskStatusMap[taskKey].prover != address(0)) {
-            revert TASK_ALREADY_SUBMITTED();
-        }
+        // if (taskStatusMap[taskKey].prover != address(0)) {
+        //     revert TASK_ALREADY_SUBMITTED();
+        // }
 
-        // Pay the reward
-        IERC20(assignment.feeToken).transferFrom(
+        // // Pay the reward
+        // IERC20(assignment.rewardToken).transferFrom(
+        //     msg.sender,
+        //     assignment.prover,
+        //     assignment.rewardAmount
+        // );
+
+        emit Transfer(
             msg.sender,
-            assignment.prover,
-            assignment.amount
+            prover,
+            rewardAmount
         );
 
-        // Deposit the bond
-        IERC20(bondToken).transferFrom(
-            assignment.prover,
+        // // Deposit the bond
+        // IERC20(bondToken).transferFrom(
+        //     assignment.prover,
+        //     address(this),
+        //     bondAmount
+        // );
+
+        emit Transfer(
+            prover,
             address(this),
             bondAmount
         );
 
         emit BondDeposited(
-            assignment.prover,
+            prover,
             taskKey,
             bondAmount
         );
 
-        // Check the signature
-        if (!_isContract(assignment.prover)) {
-            address assignedProver = assignment.prover;
+        // // Check the signature
+        // if (!_isContract(assignment.prover)) {
+        //     address assignedProver = assignment.prover;
 
-            if (
-                _hashAssignment(
-                    instance,
-                    assignment
-                ).recover(assignment.signature) != assignedProver
-            ) {
-                revert INVALID_PROVER_SIG();
-            }
+        //     if (
+        //         _hashAssignment(
+        //             instance,
+        //             assignment
+        //         ).recover(assignment.signature) != assignedProver
+        //     ) {
+        //         revert INVALID_PROVER_SIG();
+        //     }
 
-        } else if (
-            IERC165(
-                assignment.prover
-            ).supportsInterface(type(IERC1271).interfaceId)
-        ) {
-            if (
-                IERC1271(assignment.prover).isValidSignature(
-                    _hashAssignment(instance, assignment), assignment.signature
-                ) != EIP1271_MAGICVALUE
-            ) {
-                revert INVALID_PROVER_SIG();
-            }
+        // } else if (
+        //     IERC165(
+        //         assignment.prover
+        //     ).supportsInterface(type(IERC1271).interfaceId)
+        // ) {
+        //     if (
+        //         IERC1271(assignment.prover).isValidSignature(
+        //             _hashAssignment(instance, assignment), assignment.signature
+        //         ) != EIP1271_MAGICVALUE
+        //     ) {
+        //         revert INVALID_PROVER_SIG();
+        //     }
 
-        } else {
-            revert INVALID_PROVER();
-        }
+        // } else {
+        //     revert INVALID_PROVER();
+        // }
 
         // Save the task status
         taskStatusMap[taskKey] = TaskStatus({
             instance: instance,
-            prover: assignment.prover,
+            prover: prover,
             submittedAt: uint64(block.timestamp),
             proven: false
         });
 
         emit TaskSubmitted(
             msg.sender,
-            assignment.prover,
+            prover,
+            instance,
             taskKey,
-            assignment.feeToken,
-            assignment.amount
+            rewardToken,
+            rewardAmount,
+            liabilityWindow,
+            liabilityToken,
+            liabilityAmount
         );
     
     }
@@ -219,41 +255,47 @@ contract ProofPool is Ownable, ReentrancyGuard {
         nonReentrant
     {  
         TaskStatus storage taskStatus = taskStatusMap[taskKey];
-        if (taskStatus.prover == address(0) && taskStatus.submittedAt == 0) {
-            revert TASK_NONE_EXIST();
-        }
+        // if (taskStatus.prover == address(0) && taskStatus.submittedAt == 0) {
+        //     revert TASK_NONE_EXIST();
+        // }
 
-        if (
-            !LibBytesUtils.equal(
-                taskStatus.instance,
-                LibBytesUtils.slice(proof, 0, instanceLength)
-            )
-        ) {
-            revert TASK_NOT_THE_SAME();
-        }
+        // if (
+        //     !LibBytesUtils.equal(
+        //         taskStatus.instance,
+        //         LibBytesUtils.slice(proof, 0, instanceLength)
+        //     )
+        // ) {
+        //     revert TASK_NOT_THE_SAME();
+        // }
 
-        if (
-            taskStatus.submittedAt + proofWindow <= block.timestamp 
-                && taskStatus.prover != msg.sender
-        ) {
-            revert TASK_NOT_OPEN();
-        } else if (
-            taskStatus.submittedAt + proofWindow > block.timestamp
-                && taskStatus.prover == msg.sender
-        ) {
-            revert TASK_ALREADY_OPEN();
-        }
+        // if (
+        //     taskStatus.submittedAt + proofWindow <= block.timestamp 
+        //         && taskStatus.prover != msg.sender
+        // ) {
+        //     revert TASK_NOT_OPEN();
+        // } else if (
+        //     taskStatus.submittedAt + proofWindow > block.timestamp
+        //         && taskStatus.prover == msg.sender
+        // ) {
+        //     revert TASK_ALREADY_OPEN();
+        // }
 
-        (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
-        if (!_isCallSuccess) {
-            revert INVALID_PROOF();
-        }
+        // (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
+        // if (!_isCallSuccess) {
+        //     revert INVALID_PROOF();
+        // }
 
-        // Update status
-        taskStatus.proven = true;
+        // // Update status
+        // taskStatus.proven = true;
 
-        // Release the bond
-        IERC20(bondToken).transfer(
+        // // Release the bond
+        // IERC20(bondToken).transfer(
+        //     msg.sender,
+        //     bondAmount
+        // );
+
+        emit Transfer(
+            address(this),
             msg.sender,
             bondAmount
         );
@@ -308,8 +350,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
         return keccak256(
             abi.encode(
                 _instance,
-                _assignment.feeToken,
-                _assignment.amount,
+                _assignment.rewardToken,
+                _assignment.rewardAmount,
                 _assignment.expiry
             )
         );

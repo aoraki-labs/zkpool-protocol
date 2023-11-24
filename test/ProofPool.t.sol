@@ -128,12 +128,25 @@ contract ProofPoolTest is Test {
         vm.startPrank(requester);
         TaskAssignment memory assignment = TaskAssignment({
             prover: prover,
-            feeToken: address(rewardToken),
-            amount: 5 ether,
+            rewardToken: address(rewardToken),
+            rewardAmount: 5 ether,
+            liabilityWindow: 3600,
+            liabilityToken: address(rewardToken),
+            liabilityAmount: 5 ether,
             expiry: uint64(block.timestamp + 3600),
             signature: signature
         });
-        bytes32 taskKey = proofPool.submitTask(instance, assignment);
+        bytes32 taskKey = proofPool.submitTask(
+            instance,
+            prover,
+            address(rewardToken),
+            5 ether,
+            3600,
+            address(rewardToken),
+            5 ether,
+            uint64(block.timestamp + 3600),
+            signature
+        );
         TaskStatus memory taskStatus = proofPool.readProofStatus(taskKey);
         vm.stopPrank();
         
@@ -179,12 +192,25 @@ contract ProofPoolTest is Test {
         vm.startPrank(requester);
         TaskAssignment memory assignment = TaskAssignment({
             prover: prover,
-            feeToken: address(rewardToken),
-            amount: 5 ether,
+            rewardToken: address(rewardToken),
+            rewardAmount: 5 ether,
+            liabilityWindow: 3600,
+            liabilityToken: address(rewardToken),
+            liabilityAmount: 5 ether,
             expiry: uint64(block.timestamp + 3600),
             signature: signature
         });
-        bytes32 taskKey = proofPool.submitTask(instance, assignment);
+        bytes32 taskKey = proofPool.submitTask(
+            instance, 
+            prover,
+            address(rewardToken),
+            5 ether,
+            3600,
+            address(rewardToken),
+            5 ether,
+            uint64(block.timestamp + 3600),
+            signature
+        );
         vm.stopPrank();
         
 
