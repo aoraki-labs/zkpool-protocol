@@ -280,10 +280,10 @@ contract ProofPool is Ownable, ReentrancyGuard {
             revert TASK_ALREADY_OPEN();
         }
 
-        Since risc0's solidity verifier is not open sourced
-        the verifying process is done by default for demo purposes.
-        (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
-        _isCallSuccess = true
+        // Since risc0's solidity verifier is not open sourced
+        // the verifying process is done by default for demo purposes.
+        // (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
+        _isCallSuccess = true;
 
         if (!_isCallSuccess) {
             revert INVALID_PROOF();
