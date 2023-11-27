@@ -154,7 +154,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
 
 
         // Check prover assignment
-        if (_expiry <= block.timestamp) {
+        if (_expiry <= block.number) {
             revert INVALID_ASSIGNMENT();
         }
 
