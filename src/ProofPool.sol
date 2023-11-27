@@ -138,22 +138,23 @@ contract ProofPool is Ownable, ReentrancyGuard {
         bytes calldata instance,
         // bytes calldata txList,
         // TaskAssignment memory assignment
-        address prover,
-        address rewardToken,
-        uint256 rewardAmount,
-        uint64 liabilityWindow,
-        address liabilityToken,
-        uint256 liabilityAmount,
-        uint64 expiry,
-        bytes calldata signature
+        address _prover,
+        address _rewardToken,
+        uint256 _rewardAmount,
+        uint64 _liabilityWindow,
+        address _liabilityToken,
+        uint256 _liabilityAmount,
+        uint64 _expiry,
+        bytes calldata _signature
     )
         external
         nonReentrant
         returns (bytes32 taskKey)
     {
 
+
         // Check prover assignment
-        if (assignment.expiry <= block.timestamp) {
+        if (_expiry <= block.timestamp) {
             revert INVALID_ASSIGNMENT();
         }
 
@@ -164,58 +165,72 @@ contract ProofPool is Ownable, ReentrancyGuard {
         }
 
         // Pay the reward
-        IERC20(assignment.rewardToken).transferFrom(
+        IERC20(_rewardToken).transferFrom(
             msg.sender,
-            assignment.prover,
-            assignment.rewardAmount
+            _prover,
+            _rewardAmount
         );
 
         emit Transfer(
             msg.sender,
-            prover,
-            rewardAmount
+            _prover,
+            _rewardAmount
         );
 
         // Deposit the bond
         IERC20(bondToken).transferFrom(
-            assignment.prover,
+            _prover,
             address(this),
             bondAmount
         );
 
         emit Transfer(
-            prover,
+            _prover,
             address(this),
             bondAmount
         );
 
         emit BondDeposited(
-            prover,
+            _prover,
             taskKey,
             bondAmount
         );
 
         // Check the signature
-        if (!_isContract(assignment.prover)) {
-            address assignedProver = assignment.prover;
+        if (!_isContract(_prover)) {
+            // address assignedProver = _prover;
 
             if (
                 _hashAssignment(
                     instance,
-                    assignment
-                ).recover(assignment.signature) != assignedProver
+                    _rewardToken,
+                    _rewardAmount,
+                    _liabilityWindow,
+                    _liabilityToken,
+                    _liabilityAmount,
+                    _expiry
+                ).recover(_signature) != _prover
             ) {
                 revert INVALID_PROVER_SIG();
             }
 
         } else if (
             IERC165(
-                assignment.prover
+                _prover
             ).supportsInterface(type(IERC1271).interfaceId)
         ) {
             if (
-                IERC1271(assignment.prover).isValidSignature(
-                    _hashAssignment(instance, assignment), assignment.signature
+                IERC1271(_prover).isValidSignature(
+                    _hashAssignment(
+                            instance,
+                            _rewardToken,
+                            _rewardAmount,
+                            _liabilityWindow,
+                            _liabilityToken,
+                            _liabilityAmount,
+                            _expiry
+                        ),
+                        _signature
                 ) != EIP1271_MAGICVALUE
             ) {
                 revert INVALID_PROVER_SIG();
@@ -225,24 +240,25 @@ contract ProofPool is Ownable, ReentrancyGuard {
             revert INVALID_PROVER();
         }
 
+
         // Save the task status
         taskStatusMap[taskKey] = TaskStatus({
             instance: instance,
-            prover: prover,
+            prover: _prover,
             submittedAt: uint64(block.timestamp),
             proven: false
         });
 
         emit TaskSubmitted(
             msg.sender,
-            prover,
+            _prover,
             instance,
             taskKey,
-            rewardToken,
-            rewardAmount,
-            liabilityWindow,
-            liabilityToken,
-            liabilityAmount
+            _rewardToken,
+            _rewardAmount,
+            _liabilityWindow,
+            _liabilityToken,
+            _liabilityAmount
         );
     
     }
@@ -283,7 +299,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
         // Since risc0's solidity verifier is not open sourced
         // the verifying process is done by default for demo purposes.
         // (bool _isCallSuccess, ) = verifierAddress.staticcall(proof);
-        _isCallSuccess = true;
+        bool _isCallSuccess = true;
 
         if (!_isCallSuccess) {
             revert INVALID_PROOF();
@@ -345,7 +361,12 @@ contract ProofPool is Ownable, ReentrancyGuard {
 
     function _hashAssignment(
         bytes memory _instance,
-        TaskAssignment memory _assignment
+        address _rewardToken,
+        uint256 _rewardAmount,
+        uint64 _liabilityWindow,
+        address _liabilityToken,
+        uint256 _liabilityAmount,
+        uint64 _expiry
     )
         private
         pure
@@ -354,11 +375,16 @@ contract ProofPool is Ownable, ReentrancyGuard {
         return keccak256(
             abi.encode(
                 _instance,
-                _assignment.rewardToken,
-                _assignment.rewardAmount,
-                _assignment.expiry
+                _rewardToken,
+                _rewardAmount,
+                _liabilityToken,
+                _liabilityAmount,
+                _expiry,
+                _liabilityWindow
             )
         );
     }
 
 }
+
+
