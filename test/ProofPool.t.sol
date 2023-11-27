@@ -1,17 +1,21 @@
 // // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test, console2 } from "forge-std/Test.sol";
 import { ProofPool, TaskAssignment, TaskStatus } from "../src/ProofPool.sol";
 import { RewardERC20, BondERC20 } from "./SomeERC20.sol";
 import { YulDeployer } from "./YulDeployer.sol";
 import { LibBytesUtils } from "../src/libs/LibBytesUtils.sol";
 import { Token } from "../src/Token.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 interface SomeVerifier {}
 
 
 contract ProofPoolTest is Test {
+
+    using ECDSA for bytes32;
+
     
     uint256 private _seed = 0x12345678;
 
@@ -43,9 +47,12 @@ contract ProofPoolTest is Test {
     
     function setUp() public {
         
+        proverPrivateKey = 0xdb96b69680aee75d9b9b952b9cfb11bebef7c9f36a66147675d0219aa69306df;
+        prover = vm.addr(proverPrivateKey);
+
         (owner, ownerPrivateKey) = getRandomAddress();
         (requester, requesterPrivateKey) = getRandomAddress();
-        (prover, proverPrivateKey) = getRandomAddress();
+        // (prover, proverPrivateKey) = getRandomAddress();
         (openProver, openProverPrivateKey) = getRandomAddress();
 
         rewardToken = new RewardERC20(100 ether);
@@ -172,32 +179,88 @@ contract ProofPoolTest is Test {
         //     )
         // );
 
-        bytes memory instance = abi.encode(1701076458427);
-        console2.log("instance is: ", address(uint160(1701075745987)));
+        bytes memory instance = abi.encodePacked(hex"31373031303733383636343637");
+        console2.log("instance is: ", string(instance));
         address _rewardToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
         uint256 _rewardAmount = 100;
         address _liabilityToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
         uint256 _liabilityAmount = 100;
-        uint64 _expiry = 4777233;
+        uint64 _expiry = 4777034;
         uint64 _liabilityWindow = 36000;
 
         vm.startPrank(prover);
-        bytes32 digest = keccak256(
-            abi.encode(
-                instance,
-                _rewardToken,
-                _rewardAmount,
-                _liabilityToken,
-                _liabilityAmount,
-                _expiry,
-                _liabilityWindow
+        // bytes32 digest = keccak256(
+        //     abi.encode(
+        //         instance,
+        //         _rewardToken,
+        //         _rewardAmount,
+        //         _liabilityToken,
+        //         _liabilityAmount,
+        //         _expiry,
+        //         _liabilityWindow
+        //     )
+        // );
+
+        // console2.log("digest is:", vm.toString(digest));
+
+        // bytes32 digest = keccak256("Example `personal_sign` message");
+        // // digest: 0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad
+        bytes32 digest = keccak256(abi.encode("hello world"));
+        // digest: 0xd9f29a4e347ad89dc70490124ee6975fbc0693c7e72d6bc383673bfd0e8841f2
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            proverPrivateKey,
+            keccak256(
+                abi.encode(
+                    keccak256(abi.encode("hello world")),
+                    0
+                )
             )
+
         );
+        bytes memory signature = abi.encodePacked(r, s, v);
+        // bytes memory signature = hex"00da63ad7a7771899047b7ed9cdd14adf656c1ae39171724265fce1ccaec358d426e1b8b9c78ff060641f89492c0e876643ac198680463d370c34d00f0015d1d1c";
 
         console2.log("digest is:", vm.toString(digest));
-        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
-        // bytes memory signature = abi.encodePacked(r, s, v);
+        console2.log("v is:", vm.toString(v));
+        console2.log("r is:", vm.toString(r));
+        console2.log("s is:", vm.toString(s));
+        console2.log("signature is:", vm.toString(signature));
+        console2.log("proverPrivateKey is:", vm.toString(abi.encodePacked(proverPrivateKey)));
+        console2.log("address is:", vm.addr(proverPrivateKey));
+        console2.log("recover result is:", digest.recover(signature));
+        
 
+        // bytes32 hash = keccak256("Signed by Alice");
+        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(alice, hash);
+        // address signer = ecrecover(hash, v, r, s);
+        // assertEq(alice.addr, signer); // [PASS]
+
+        
+        // console2.log("prover is:", prover);
+        // console2.log("signature is:", vm.toString(signature));
+
+        // console2.log("signature is:", vm.addr(uint256(bytes32(hex"db96b69680aee75d9b9b952b9cfb11bebef7c9f36a66147675d0219aa69306df"))));
+
+
+
+        // address result = _hashAssignment(
+        //     instance,
+        //     _rewardToken,
+        //     _rewardAmount,
+        //     _liabilityWindow,
+        //     _liabilityToken,
+        //     _liabilityAmount,
+        //     _expiry
+        // ).recover(_signature);
+
+        // console2.log("address is:", result);
+        // console2.log("prover is:", prover.address);
+
+
+
+        
+        
+        
     }
 
 
