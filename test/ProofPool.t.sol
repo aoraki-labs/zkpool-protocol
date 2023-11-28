@@ -229,16 +229,9 @@ contract ProofPoolTest is Test {
         bytes32 digest = keccak256(abi.encodePacked("\u0019Ethereum Signed Message:\n32", bytes.concat(hashedMsg)));
         console2.log("digest is:", vm.toString(digest));
 
-        bytes32 digest1 = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", bytes.concat(hashedMsg)));
-        console2.log("digest1 is:", vm.toString(digest1));
-
-        // console2.log("encode is:", vm.toString(abi.encodePacked("\x19Ethereum Signed Message:\n", 32, bytes.concat(hashedMsg))));
-        // console2.log("encode is:", vm.toString(abi.encodePacked(bytes.concat(hashedMsg))));
-        // console2.log("encode is:", vm.toString(abi.encodePacked("\u0019Ethereum Signed Message:\n11", "hello")));
-
-        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
-        // bytes memory signature = abi.encodePacked(r, s, v);
-        // console2.log("signature is:", vm.toString(signature));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+        console2.log("signature is:", vm.toString(signature));
 
 
         // bytes32 hash = keccak256("Signed by Alice");
