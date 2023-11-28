@@ -204,9 +204,14 @@ contract ProofPoolTest is Test {
         // console2.log("digest is:", vm.toString(digest));
 
 
+// bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32",
+//                                             bytes32(uint256(uint160(adin))), 
+//                                             bytes32(ticketNum))
+// );
 
+        string memory _message = "hello world";
 
-        bytes32 digest = keccak256(abi.encode("hello world"));
+        bytes32 digest = keccak256(abi.encodePacked("\u0019Ethereum Signed Message:\n11", _message));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
