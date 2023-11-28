@@ -373,7 +373,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
         returns (bytes32)
     {
         return keccak256(
-            abi.encode(
+            abi.encodePacked(
+                "\u0019Ethereum Signed Message:\n11",
                 _instance,
                 _rewardToken,
                 _rewardAmount,
