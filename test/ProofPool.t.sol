@@ -179,14 +179,13 @@ contract ProofPoolTest is Test {
         //     )
         // );
 
-        bytes memory instance = abi.encodePacked(hex"31373031303733383636343637");
-        console2.log("instance is: ", string(instance));
-        address _rewardToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
-        uint256 _rewardAmount = 100;
-        address _liabilityToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
-        uint256 _liabilityAmount = 100;
-        uint64 _expiry = 4777034;
-        uint64 _liabilityWindow = 36000;
+        // bytes memory instance = abi.encodePacked(hex"31373031303733383636343637");
+        // address _rewardToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
+        // uint256 _rewardAmount = 100;
+        // address _liabilityToken = address(0xfDfd239c9dD30445d0e080Ecf055A5cc53456A72);
+        // uint256 _liabilityAmount = 100;
+        // uint64 _expiry = 4777034;
+        // uint64 _liabilityWindow = 36000;
 
         vm.startPrank(prover);
         // bytes32 digest = keccak256(
@@ -209,25 +208,38 @@ contract ProofPoolTest is Test {
 //                                             bytes32(ticketNum))
 // );
 
-        string memory _message = "hello world";
+        // string memory _message = "hello world";
 
-        bytes32 digest = keccak256(abi.encodePacked("\u0019Ethereum Signed Message:\n11", _message));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
-        bytes memory signature = abi.encodePacked(r, s, v);
+        // bytes32 digest = keccak256(abi.encodePacked("\u0019Ethereum Signed Message:\n11", _message));
+        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
+        // bytes memory signature = abi.encodePacked(r, s, v);
 
+        // console2.log("digest is:", vm.toString(digest));
+        // console2.log("v is:", vm.toString(v));
+        // console2.log("r is:", vm.toString(r));
+        // console2.log("s is:", vm.toString(s));
+        // console2.log("signature is:", vm.toString(signature));
+        // console2.log("proverPrivateKey is:", vm.toString(abi.encodePacked(proverPrivateKey)));
+        // console2.log("address is:", vm.addr(proverPrivateKey));
+        // console2.log("recover result is:", digest.recover(signature));
+        
+        bytes32 hashedMsg = 0x4be1b2cc9677242a50e0c8e71f2eb9479399f1b04ccc3888729176bcc739f571;
+        console2.log("hashedMsg is:", vm.toString(hashedMsg));
+
+        bytes32 digest = keccak256(abi.encodePacked("\u0019Ethereum Signed Message:\n32", bytes.concat(hashedMsg)));
         console2.log("digest is:", vm.toString(digest));
-        console2.log("v is:", vm.toString(v));
-        console2.log("r is:", vm.toString(r));
-        console2.log("s is:", vm.toString(s));
-        console2.log("signature is:", vm.toString(signature));
-        console2.log("proverPrivateKey is:", vm.toString(abi.encodePacked(proverPrivateKey)));
-        console2.log("address is:", vm.addr(proverPrivateKey));
-        console2.log("recover result is:", digest.recover(signature));
-        
 
+        bytes32 digest1 = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", bytes.concat(hashedMsg)));
+        console2.log("digest1 is:", vm.toString(digest1));
 
+        // console2.log("encode is:", vm.toString(abi.encodePacked("\x19Ethereum Signed Message:\n", 32, bytes.concat(hashedMsg))));
+        // console2.log("encode is:", vm.toString(abi.encodePacked(bytes.concat(hashedMsg))));
+        // console2.log("encode is:", vm.toString(abi.encodePacked("\u0019Ethereum Signed Message:\n11", "hello")));
 
-        
+        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
+        // bytes memory signature = abi.encodePacked(r, s, v);
+        // console2.log("signature is:", vm.toString(signature));
+
 
         // bytes32 hash = keccak256("Signed by Alice");
         // (uint8 v, bytes32 r, bytes32 s) = vm.sign(alice, hash);
