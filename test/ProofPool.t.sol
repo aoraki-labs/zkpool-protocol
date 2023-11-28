@@ -220,7 +220,7 @@ contract ProofPoolTest is Test {
         // console2.log("s is:", vm.toString(s));
         // console2.log("signature is:", vm.toString(signature));
         // console2.log("proverPrivateKey is:", vm.toString(abi.encodePacked(proverPrivateKey)));
-        // console2.log("address is:", vm.addr(proverPrivateKey));
+        console2.log("address is:", vm.addr(proverPrivateKey));
         // console2.log("recover result is:", digest.recover(signature));
         
         bytes32 hashedMsg = 0x4be1b2cc9677242a50e0c8e71f2eb9479399f1b04ccc3888729176bcc739f571;

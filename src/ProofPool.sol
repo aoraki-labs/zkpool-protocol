@@ -201,14 +201,21 @@ contract ProofPool is Ownable, ReentrancyGuard {
             // address assignedProver = _prover;
 
             if (
-                _hashAssignment(
-                    instance,
-                    _rewardToken,
-                    _rewardAmount,
-                    _liabilityWindow,
-                    _liabilityToken,
-                    _liabilityAmount,
-                    _expiry
+                keccak256(
+                    abi.encodePacked(
+                        "\u0019Ethereum Signed Message:\n32",
+                        bytes.concat(
+                            _hashAssignment(
+                                instance,
+                                _rewardToken,
+                                _rewardAmount,
+                                _liabilityWindow,
+                                _liabilityToken,
+                                _liabilityAmount,
+                                _expiry
+                            )
+                        )
+                    )
                 ).recover(_signature) != _prover
             ) {
                 revert INVALID_PROVER_SIG();
@@ -275,22 +282,22 @@ contract ProofPool is Ownable, ReentrancyGuard {
             revert TASK_NONE_EXIST();
         }
 
-        if (
-            !LibBytesUtils.equal(
-                taskStatus.instance,
-                LibBytesUtils.slice(proof, 0, instanceLength)
-            )
-        ) {
-            revert TASK_NOT_THE_SAME();
-        }
+        // if (
+        //     !LibBytesUtils.equal(
+        //         taskStatus.instance,
+        //         LibBytesUtils.slice(proof, 0, instanceLength)
+        //     )
+        // ) {
+        //     revert TASK_NOT_THE_SAME();
+        // }
 
         if (
-            taskStatus.submittedAt + proofWindow <= block.timestamp 
+            taskStatus.submittedAt + proofWindow > block.timestamp 
                 && taskStatus.prover != msg.sender
         ) {
             revert TASK_NOT_OPEN();
         } else if (
-            taskStatus.submittedAt + proofWindow > block.timestamp
+            taskStatus.submittedAt + proofWindow <= block.timestamp
                 && taskStatus.prover == msg.sender
         ) {
             revert TASK_ALREADY_OPEN();
@@ -359,7 +366,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
         return (size > 0);
     }
 
-    function _hashAssignment(
+function _hashAssignment(
         bytes memory _instance,
         address _rewardToken,
         uint256 _rewardAmount,
@@ -373,8 +380,7 @@ contract ProofPool is Ownable, ReentrancyGuard {
         returns (bytes32)
     {
         return keccak256(
-            abi.encodePacked(
-                "\u0019Ethereum Signed Message:\n11",
+            abi.encode(
                 _instance,
                 _rewardToken,
                 _rewardAmount,
@@ -385,7 +391,6 @@ contract ProofPool is Ownable, ReentrancyGuard {
             )
         );
     }
-
 }
 
 
