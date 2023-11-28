@@ -203,22 +203,12 @@ contract ProofPoolTest is Test {
 
         // console2.log("digest is:", vm.toString(digest));
 
-        // bytes32 digest = keccak256("Example `personal_sign` message");
-        // // digest: 0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad
-        bytes32 digest = keccak256(abi.encode("hello world"));
-        // digest: 0xd9f29a4e347ad89dc70490124ee6975fbc0693c7e72d6bc383673bfd0e8841f2
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            proverPrivateKey,
-            keccak256(
-                abi.encode(
-                    keccak256(abi.encode("hello world")),
-                    0
-                )
-            )
 
-        );
+
+
+        bytes32 digest = keccak256(abi.encode("hello world"));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(proverPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
-        // bytes memory signature = hex"00da63ad7a7771899047b7ed9cdd14adf656c1ae39171724265fce1ccaec358d426e1b8b9c78ff060641f89492c0e876643ac198680463d370c34d00f0015d1d1c";
 
         console2.log("digest is:", vm.toString(digest));
         console2.log("v is:", vm.toString(v));
@@ -228,6 +218,10 @@ contract ProofPoolTest is Test {
         console2.log("proverPrivateKey is:", vm.toString(abi.encodePacked(proverPrivateKey)));
         console2.log("address is:", vm.addr(proverPrivateKey));
         console2.log("recover result is:", digest.recover(signature));
+        
+
+
+
         
 
         // bytes32 hash = keccak256("Signed by Alice");
