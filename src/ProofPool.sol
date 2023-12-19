@@ -67,7 +67,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
 
     event TaskProven(
         address indexed prover,
-        bytes32 taskKey
+        bytes32 taskKey,
+        bytes proof
     );
 
     event BondDeposited(
@@ -321,11 +322,11 @@ contract ProofPool is Ownable, ReentrancyGuard {
             bondAmount
         );
 
-        emit Transfer(
-            address(this),
-            msg.sender,
-            bondAmount
-        );
+        // emit Transfer(
+        //     address(this),
+        //     msg.sender,
+        //     bondAmount
+        // );
 
         emit BondReleased(
             msg.sender,
@@ -335,7 +336,8 @@ contract ProofPool is Ownable, ReentrancyGuard {
 
         emit TaskProven(
             msg.sender,
-            taskKey
+            taskKey,
+            proof
         );
         
     }

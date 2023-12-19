@@ -3,20 +3,31 @@ pragma solidity ^0.8.20;
 
 contract Token {
 
-    string public constant symbol = "ARK";
-    string public constant name = "Aoraki";
+    string public constant symbol = "tARK";
+    string public constant name = "Test Aoraki Token";
     uint256 public constant decimals = 18;
     uint256 public totalSupply = 0;
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
+    address public minter;
+    address public owner;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    event MinterChanged(address indexed oldMinter, address indexed newMinter);
 
     constructor() {
+        minter = msg.sender;
+        owner = msg.sender;
         _mint(msg.sender, 0);
+    }
+
+    function setMinter(address _minter) external {
+        require(msg.sender == owner, "Only owner can change the minter");
+        emit MinterChanged(minter, _minter);
+        minter = _minter;
     }
 
     function approve(address _spender, uint256 _value) public returns (bool) {
@@ -72,6 +83,7 @@ contract Token {
     }
 
     function mint(address account, uint256 amount) external returns (bool) {
+        require(msg.sender == minter);
         _mint(account, amount);
         return true;
     }
